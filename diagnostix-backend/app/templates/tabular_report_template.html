@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>DiagnostiX — Tabular SHAP Report</title>
+
+    <style>
+        :root {
+            --bg: #f7f8fb;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --border: #e4e4e4;
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 30px;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 14px;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #555;
+            margin-top: 4px;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .left {
+            flex: 2;
+        }
+
+        .right {
+            flex: 1;
+        }
+
+        img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        pre {
+            background: #eef2ff;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+
+        .class-item {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: 0.15s;
+        }
+
+        .class-item:hover {
+            background: var(--primary-light);
+        }
+
+        button {
+            padding: 8px 14px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background: #1e4fcc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="card header">
+            <div>
+                <h1>DiagnostiX — Tabular SHAP Explanation</h1>
+                <div class="subtitle">
+                    Disease: <b>{{disease}}</b> • Predicted:
+                    <b id="predLabel">{{pred_label}}</b>
+                    (class {{pred_index}})
+                    <br />
+                    Generated: {{time}}
+                </div>
+            </div>
+
+            <div>
+                <button onclick="downloadPNG()">Download PNG</button>
+                <button onclick="downloadPDF()">Download PDF</button>
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="row">
+
+            <!-- LEFT SIDE (SHAP + inputs) -->
+            <div class="left">
+
+                <div class="card">
+                    <h2>Model Probabilities & Input</h2>
+                    <p><b>Input features (ordered):</b></p>
+                    <pre id="inputBox">{{input_json}}</pre>
+
+                    <p><b>Predicted probabilities:</b></p>
+                    <pre id="probBox">{{probs_json}}</pre>
+                </div>
+
+                <div class="card">
+                    <h2>Feature Importance (mean |SHAP|)</h2>
+                    <img src="data:image/png;base64,{{feat_imp_png}}" />
+                </div>
+
+                <div class="card">
+                    <h2>Per-sample SHAP Contributions</h2>
+                    <img src="data:image/png;base64,{{waterfall_png}}" />
+                </div>
+
+                <div class="card">
+                    <h2>Force-like Contribution Plot</h2>
+                    <img src="data:image/png;base64,{{force_png}}" />
+                </div>
+
+            </div>
+
+            <!-- RIGHT SIDE -->
+            <div class="right">
+
+                <div class="card">
+                    <h2>Classes & Explanations</h2>
+                    <div id="classList">
+                        {{class_buttons_html}}
+                    </div>
+
+                    <h3>Explanation</h3>
+                    <p id="explanationBox">{{explanation}}</p>
+                </div>
+
+                <div class="card">
+                    <h2>Notes</h2>
+                    <p>
+                        SHAP visualizes how each feature contributes to the prediction.
+                        Always combine AI predictions with clinical judgement.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- JS LIBS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        const DISEASE = {{disease_js}};
+        const CLASS_NAMES = {{class_names_js}};
+        const EXPLANATIONS = {{explanations_js}};
+        const INPUT_SAMPLE = {{input_js}};
+        const PROBS = {{probs_js}};
+        const FEATURE_NAMES = {{feature_names_js}};
+
+        document.getElementById("inputBox").innerText =
+            JSON.stringify(INPUT_SAMPLE, null, 2);
+
+        document.getElementById("probBox").innerText =
+            JSON.stringify(PROBS, null, 2);
+
+        function selectClass(i) {
+            document.getElementById("predLabel").innerText = CLASS_NAMES[i];
+            document.getElementById("explanationBox").innerText =
+                EXPLANATIONS[CLASS_NAMES[i]] || "No explanation available.";
+        }
+
+        async function downloadPNG() {
+            const canvas = await html2canvas(document.body, { scale: 1.5 });
+            const a = document.createElement("a");
+            a.href = canvas.toDataURL("image/png");
+            a.download = `diagnostix_${DISEASE}_report.png`;
+            a.click();
+        }
+
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const canvas = await html2canvas(document.body, { scale: 1.5 });
+            const img = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+
+            const width = pdf.internal.pageSize.getWidth();
+            const height = (canvas.height * width) / canvas.width;
+
+            pdf.addImage(img, "PNG", 0, 0, width, height);
+            pdf.save(`diagnostix_${DISEASE}_report.pdf`);
+        }
+
+        selectClass({{pred_index}});
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,32 @@
+fastapi
+uvicorn[standard]
+python-multipart
+
+torch
+torchvision
+pillow
+numpy
+pandas
+scikit-learn
+xgboost
+
+# SHAP
+shap
+
+# LLM + PDF parsing
+openai
+pypdf
+
+# Instead of pytorch-grad-cam (not available for latest pip)
+# We'll use custom Grad-CAM implementation
+# pytorch-grad-cam
+
+onnxruntime
+joblib
+
+openai
+pypdf
+
+
+pdf2image
+pytesseract
