@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
 import os
 load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from app.image_routes import router as image_router
 from app.tabular_routes import router as tabular_router
 from app.report_routes import router as report_router
@@ -16,10 +16,13 @@ app = FastAPI(title="DiagnostiX Backend")
 # CORS
 # -------------------------
 origins = [
+    # Local development
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    # Production
+    "https://diagonosti-x.vercel.app",
 ]
 
 app.add_middleware(
@@ -32,13 +35,13 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"status": "Backend Running"}
+    return {"status": "DiagnostiX Backend Running"}
 
 # -------------------------
-# 🟢 ROUTER PREFIX FIX
+# ROUTERS
 # -------------------------
 app.include_router(image_router, prefix="/image")
-app.include_router(report_router, prefix="/image")         # <--- IMPORTANT
+app.include_router(report_router, prefix="/image")
 app.include_router(tabular_router, prefix="/tabular")
 app.include_router(tabular_explain_router, prefix="/tabular")
 app.include_router(llm_router)
