@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
-# Simple helper to run the dev server
 export PYTHONPATH=.
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+export MPLCONFIGDIR=/tmp/matplotlib
+mkdir -p /tmp/matplotlib
+uvicorn main:app --host 0.0.0.0 --port 10000
