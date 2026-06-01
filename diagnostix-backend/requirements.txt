@@ -30,3 +30,5 @@ pypdf
 
 pdf2image
 pytesseract
+
+supabase
